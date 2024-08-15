@@ -16,17 +16,27 @@ APP_C_FILES:= ./client/src/*.cpp
 CFLAGS = -std=c++20 -O2
 LDFLAGS = -lglfw -lvulkan -lpthread
 
-all: buildLibrary buildClient run
+.PHONY: all buildShaders buildLibrary buildClient run
+
+all: buildShaders buildLibrary buildClient run
+
+buildShaders:
+	mkdir -p $(BUILD_DIR)/shaders
+	/Users/pprokop/VulkanSDK/1.3.290.0/macOS/bin/glslc client/shaders/shader.vert -o $(BUILD_DIR)/shaders/vert.spv
+	/Users/pprokop/VulkanSDK/1.3.290.0/macOS/bin/glslc client/shaders/shader.frag -o $(BUILD_DIR)/shaders/frag.spv
 
 buildLibrary:
+	mkdir -p $(BUILD_DIR)
 	clang++ $(CFLAGS) $(LIB_C_FILES) $(LIB_DEFINES) -o $(BUILD_DIR)/lib$(LIB_NAME).dylib $(LIB_LINKERS) $(LIB_INCLUDES)
 
 buildClient:
+	mkdir -p $(BUILD_DIR)
 	clang++ $(CFLAGS) $(APP_C_FILES) -o $(BUILD_DIR)/$(APP_NAME) $(APP_LINKERS) $(APP_INCLUDES)
 
 run:
 	export VK_ICD_FILENAMES=/Users/pprokop/VulkanSDK/1.3.290.0/macOS/share/vulkan/icd.d/MoltenVK_icd.json
 	$(BUILD_DIR)/$(APP_NAME)
+
 
 
 # export VULKAN_SDK=/Users/pprokop/VulkanSDK/1.3.290.0
