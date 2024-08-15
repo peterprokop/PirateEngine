@@ -432,11 +432,9 @@ private:
         }
     }
 
-    void createGraphicsPipeline() {
-        // auto vertShaderCode = readFile("/Users/pprokop/dev/vulkan/pirate_engine/bin/shaders/vert.spv");
-        // auto fragShaderCode = readFile("/Users/pprokop/dev/vulkan/pirate_engine/bin/shaders/frag.spv");
-        auto vertShaderCode = readFile("./shaders/vert.spv");
-        auto fragShaderCode = readFile("./shaders/frag.spv");
+    void createGraphicsPipeline() {        
+        auto vertShaderCode = readFile(std::string(__PE_SHADER_DIR) + "/vert.spv");
+        auto fragShaderCode = readFile(std::string(__PE_SHADER_DIR) + "/frag.spv");
 
         VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
         VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
