@@ -3,19 +3,21 @@ BUILD_DIR = ./bin
 
 VK_SDK_BASE:=/Users/pprokop/VulkanSDK/1.3.290.0
 GLFW_BASE:=/opt/homebrew/Cellar/glfw/3.4
+GLM_BASE:=/opt/homebrew/Cellar/glm/1.0.1
 
 APP_INCLUDES:=\
 	-I./client/src\
 	-I$(VK_SDK_BASE)/macOS/include\
-	-I$(GLFW_BASE)/include
+	-I$(GLFW_BASE)/include\
+	-I$(GLM_BASE)/include
 APP_LINKERS:=\
 	-L$(VK_SDK_BASE)/macOS/lib -Wl,-rpath,$(VK_SDK_BASE)/macOS/lib -lvulkan.1 \
-	-L$(GLFW_BASE)/lib -lglfw
+	-L$(GLFW_BASE)/lib -lglfw\
+	-L$(GLM_BASE)/lib -lglm
 APP_C_FILES:= ./client/src/*.cpp
 
 CFLAGS = -std=c++20 -O2
 CMACROS = -D __PE_SHADER_DIR="\"$(abspath $(BUILD_DIR))/shaders\""
-LDFLAGS = -lglfw -lvulkan -lpthread
 
 .PHONY: all buildShaders buildClient run
 
