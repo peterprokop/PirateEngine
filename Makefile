@@ -17,7 +17,8 @@ APP_LINKERS:=\
 APP_C_FILES:= ./client/src/*.cpp
 
 CFLAGS = -std=c++20 -O2
-CMACROS = -D __PE_SHADER_DIR="\"$(abspath $(BUILD_DIR))/shaders\""
+CMACROS = -D __PE_SHADER_DIR="\"$(abspath $(BUILD_DIR))/shaders\""\
+-D __PE_TEXTURES_DIR="\"$(abspath ./client)/textures\""
 
 .PHONY: all buildShaders buildClient run
 
