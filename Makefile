@@ -2,6 +2,7 @@ APP_NAME = pirateGame
 
 BUILD_DIR = ./bin
 BUILD_TEXTURES_DIR = ./bin/textures
+BUILD_MODELS_DIR = ./bin/models
 
 VK_SDK_BASE:=/Users/pprokop/VulkanSDK/1.3.290.0
 GLFW_BASE:=/opt/homebrew/Cellar/glfw/3.4
@@ -20,7 +21,8 @@ APP_C_FILES:= ./client/src/*.cpp
 
 CFLAGS = -std=c++20 -O2
 CMACROS = -D __PE_SHADER_DIR="\"$(abspath $(BUILD_DIR))/shaders\""\
--D __PE_TEXTURES_DIR="\"$(abspath $(BUILD_TEXTURES_DIR))\""
+-D __PE_TEXTURES_DIR="\"$(abspath $(BUILD_TEXTURES_DIR))\""\
+-D __PE_MODELS_DIR="\"$(abspath $(BUILD_MODELS_DIR))\""
 
 .PHONY: all copyAssets buildShaders buildClient run
 
@@ -28,7 +30,9 @@ all: copyAssets buildShaders buildClient run
 
 copyAssets:
 	mkdir -p $(BUILD_TEXTURES_DIR)
+	mkdir -p $(BUILD_MODELS_DIR) 
 	cp ./client/textures/* $(BUILD_TEXTURES_DIR)
+	cp ./client/models/* $(BUILD_MODELS_DIR)
 
 buildShaders:
 	mkdir -p $(BUILD_DIR)/shaders
