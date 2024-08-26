@@ -165,12 +165,24 @@ private:
         window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
         glfwSetWindowUserPointer(window, this);
         glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
+        glfwSetKeyCallback(window, keyCallback);
     }
 
     static void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
         auto app = reinterpret_cast<PirateEngine*>(glfwGetWindowUserPointer(window));
         app->framebufferResized = true;
     }
+
+    static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+    {
+        auto app = reinterpret_cast<PirateEngine*>(glfwGetWindowUserPointer(window));
+
+        if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+            app->cleanup();
+            exit(0);
+        }
+    }
+
 
     void initVulkan() {
         createInstance();
