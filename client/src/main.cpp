@@ -1330,7 +1330,18 @@ private:
     }
 
     void drawFrame() {
-        vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);        
+        vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+
+        #ifndef NDEBUG
+        static auto lastFrameTime = std::chrono::high_resolution_clock::now();
+
+        auto currentTime = std::chrono::high_resolution_clock::now();
+        if (currentTime > lastFrameTime) {
+            float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - lastFrameTime).count();
+            std::cout << "Frame time: " << time << " FPS: " << 1.f/time << std::endl;
+        }
+        lastFrameTime = currentTime;
+        #endif
 
         uint32_t imageIndex;
         VkResult result = vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
