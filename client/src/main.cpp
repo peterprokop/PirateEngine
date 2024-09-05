@@ -28,6 +28,8 @@
 #include <optional>
 #include <set>
 
+#import <tinygltf/tiny_gltf.h>
+
 #import "vertex.hpp"
 #import "create_sphere.hpp"
 
