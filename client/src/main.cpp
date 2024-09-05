@@ -1003,6 +1003,13 @@ private:
     }
 
     void loadModel() {
+        loadObjModel();
+        std::cout << "Num vertices: " << vertices.size() << " Num idx: " << indices.size() << std::endl;
+    }
+
+
+    /// Loads model from .obj file
+    void loadObjModel() {
         tinyobj::attrib_t attrib;
         std::vector<tinyobj::shape_t> shapes;
         std::vector<tinyobj::material_t> materials;
@@ -1048,6 +1055,13 @@ private:
                 indices.push_back(uniqueVertices[vertex]);
             }
         }
+    }
+
+    /// @brief Creates spheres with some offset between each other
+    void loadSphereModels() {
+        createSphere(vertices, indices, {0, 0, 0});
+        createSphere(vertices, indices, {1, 1, 1});
+        createSphere(vertices, indices, {-1, -1, -1});
     }
 
     void createVertexBuffer() {

@@ -26,7 +26,7 @@ CMACROS = -D __PE_SHADER_DIR="\"$(abspath $(BUILD_DIR))/shaders\""\
 
 .PHONY: all copyAssets buildShaders buildClient run
 
-all: copyAssets buildShaders buildClient run
+all: copyAssets buildShaders buildClient run buildAndRun
 
 copyAssets:
 	mkdir -p $(BUILD_TEXTURES_DIR)
@@ -47,6 +47,8 @@ buildClient:
 run:
 	export VK_ICD_FILENAMES=$(VK_SDK_BASE)/macOS/share/vulkan/icd.d/MoltenVK_icd.json
 	$(BUILD_DIR)/$(APP_NAME)
+
+buildAndRun: buildClient run
 
 
 # export VULKAN_SDK=$(VK_SDK_BASE)/
