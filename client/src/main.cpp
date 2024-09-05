@@ -1002,7 +1002,7 @@ private:
         vkBindBufferMemory(device, buffer, bufferMemory, 0);
     }
 
-    void loadModel() {        
+    void loadModel() {
         tinyobj::attrib_t attrib;
         std::vector<tinyobj::shape_t> shapes;
         std::vector<tinyobj::material_t> materials;
