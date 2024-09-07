@@ -31,8 +31,8 @@ all: copyAssets buildShaders buildClient run buildAndRun
 copyAssets:
 	mkdir -p $(BUILD_TEXTURES_DIR)
 	mkdir -p $(BUILD_MODELS_DIR) 
-	cp ./client/textures/* $(BUILD_TEXTURES_DIR)
-	cp ./client/models/* $(BUILD_MODELS_DIR)
+	cp -R ./client/textures/* $(BUILD_TEXTURES_DIR)
+	cp -R ./client/models/* $(BUILD_MODELS_DIR)
 
 buildShaders:
 	mkdir -p $(BUILD_DIR)/shaders
