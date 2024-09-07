@@ -46,6 +46,7 @@ buildClient:
 
 run:
 	export VK_ICD_FILENAMES=$(VK_SDK_BASE)/macOS/share/vulkan/icd.d/MoltenVK_icd.json
+	echo "### Running pirate engine ###"
 	$(BUILD_DIR)/$(APP_NAME)
 
 buildAndRun: buildClient run

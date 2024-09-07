@@ -28,10 +28,9 @@
 #include <optional>
 #include <set>
 
-#import <tinygltf/tiny_gltf.h>
-
 #import "vertex.hpp"
 #import "create_sphere.hpp"
+#import "gltf_loader.hpp"
 
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
@@ -1005,6 +1004,9 @@ private:
     }
 
     void loadModel() {
+        GLTFLoader loader;
+        loader.loadModel((std::string(__PE_MODELS_DIR) + "/CesiumMan/CesiumMan.gltf").c_str());
+        exit(0);
         loadObjModel();
         std::cout << "Num vertices: " << vertices.size() << " Num idx: " << indices.size() << std::endl;
     }
