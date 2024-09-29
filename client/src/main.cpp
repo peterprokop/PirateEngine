@@ -204,10 +204,8 @@ private:
         createCommandPool();
         createDepthResources();
         createFramebuffers();
-        createTextureImage();
-        createTextureImageView();
+        loadModels();                
         createTextureSampler();
-        loadModels();
         createVertexBuffer();
         createIndexBuffer();
         createUniformBuffers();
@@ -768,12 +766,13 @@ private:
         throw std::runtime_error("failed to find supported format!");
     }
 
-    void createTextureImage() {
+    void createTextureImage(std::string filePath) {
         int texWidth, texHeight, texChannels;
 
         stbi_uc* pixels = stbi_load(
-            (std::string(__PE_TEXTURES_DIR) + "/viking_room.png").c_str(),
-            //(std::string(__PE_TEXTURES_DIR) + "/texture.jpg").data(),
+            filePath.c_str(),
+            // (std::string(__PE_TEXTURES_DIR) + "/viking_room.png").c_str(),
+            // (std::string(__PE_TEXTURES_DIR) + "/texture.jpg").data(),
             &texWidth,
             &texHeight,
             &texChannels,
@@ -1011,20 +1010,25 @@ private:
     /// Should populate `vertices` and `indices` vectors
     void loadModels() {
         GLTFLoader loader;
+        std::string textureFilePath = "";
         loader.loadModel(            
-            (std::string(__PE_MODELS_DIR) + "/WaterBottle/WaterBottle.gltf").c_str(),
+            (std::string(__PE_MODELS_DIR) + "/WaterBottle/").c_str(),
+            "WaterBottle.gltf",
             // (std::string(__PE_MODELS_DIR) + "/Triangle/Triangle.gltf").c_str(),
             // (std::string(__PE_MODELS_DIR) + "/Duck/Duck.gltf").c_str(),
             // (std::string(__PE_MODELS_DIR) + "/CesiumMan/CesiumMan.gltf").c_str(),
             // (std::string(__PE_MODELS_DIR) + "/Cube/Cube.gltf").c_str(),
             vertices,
-            indices
+            indices,
+            textureFilePath
         );
                
         // loadObjModel();
         std::cout << "Num vertices: " << vertices.size() << " Num idx: " << indices.size() << std::endl;
 
         // exit(0);
+        createTextureImage(textureFilePath);
+        createTextureImageView();
     }
 
 
@@ -1330,7 +1334,17 @@ private:
             vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
             vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
-            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
+            // Contains uniform buffer and image sampler for texture
+            vkCmdBindDescriptorSets(
+                commandBuffer,
+                VK_PIPELINE_BIND_POINT_GRAPHICS,
+                pipelineLayout,
+                0,
+                1,
+                &descriptorSets[currentFrame],
+                0,
+                nullptr
+            );
             // For non-indexed draw:
             // vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
             vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
