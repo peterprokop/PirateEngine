@@ -181,6 +181,10 @@ private:
         if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
             app->cleanup();
             exit(0);
+        } else if (key == GLFW_KEY_MINUS && action == GLFW_PRESS) {
+            std::cout << "minus\n";
+        } else if (key == GLFW_KEY_EQUAL && action == GLFW_PRESS) {
+            std::cout << "equal\n";            
         }
     }
 
@@ -1367,7 +1371,7 @@ private:
         auto currentTime = std::chrono::high_resolution_clock::now();
         if (currentTime > lastFrameTime) {
             float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - lastFrameTime).count();
-            std::cout << "Frame time: " << time << " FPS: " << 1.f/time << std::endl;
+            // std::cout << "Frame time: " << time << " FPS: " << 1.f/time << std::endl;
         }
         lastFrameTime = currentTime;
         #endif

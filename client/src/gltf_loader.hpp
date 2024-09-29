@@ -9,6 +9,35 @@
 
 using namespace tinygltf;
 
+
+std::vector<Vertex> getVertices(Model const& model, Accessor const& accessor) {
+    std::vector<Vertex> vertices;
+    const BufferView bufferView = model.bufferViews[accessor.bufferView];
+    const Buffer buffer = model.buffers[bufferView.buffer];
+
+    const int componentType = accessor.componentType;
+    const int type = accessor.type;
+    const size_t byteStride = bufferView.byteStride;
+
+    // If byte stride is specified - use it as increment.
+    int increment = (byteStride == 0)
+        ? (GetNumComponentsInType(type) * GetComponentSizeInBytes(componentType))
+        : byteStride;
+    for (int i = 0; i < bufferView.byteLength; i += increment) {
+        float x = *((float *) (buffer.data.data() + bufferView.byteOffset + i));
+        float y = *((float *) (buffer.data.data() + bufferView.byteOffset + i + GetComponentSizeInBytes(componentType)));
+        float z = *((float *) (buffer.data.data() + bufferView.byteOffset + i + 2 * GetComponentSizeInBytes(componentType)));
+        
+        // std::cout << " " << x << " " << y << " " << z << ";\n";
+
+        vertices.push_back(
+            {{x, y, z}, {1.0f, 0.0f, 0.0f}, {(x + 1)/2, (y + 1)/2}}
+        );
+    }
+
+    return vertices;
+}
+
 class GLTFLoader {
 public:
     void loadModel(
@@ -64,12 +93,13 @@ public:
         auto primitive = model.meshes[0].primitives[0];
         auto positionAccessorIndex = primitive.attributes["POSITION"];
         auto indicesAccessorIndex = primitive.indices;
-        auto indicesAccessor = model.accessors[indicesAccessorIndex];
+        Accessor indicesAccessor = model.accessors[indicesAccessorIndex];
         
         auto indicesBufferView = model.bufferViews[indicesAccessor.bufferView];
         auto indicesBuffer = model.buffers[indicesBufferView.buffer];
         
-        auto verticesAccessor = model.accessors[positionAccessorIndex];
+        Accessor verticesAccessor = model.accessors[positionAccessorIndex];
+
         auto verticesBufferView = model.bufferViews[verticesAccessor.bufferView];
         auto verticesBuffer = model.buffers[verticesBufferView.buffer];
 
@@ -109,38 +139,15 @@ public:
         for (int i = 0; i < indicesBufferView.byteLength; i += 2) {
             auto value = *((unsigned short int *) (indicesBuffer.data.data() + indicesBufferView.byteOffset + i));
             indices.push_back(value);
-            std::cout << " " << value << "\n";
+            // std::cout << " " << value << "\n";
 
             // if (i > 200) {
             //     break;
             // }
         }
 
-        std::cout << std::endl;
-        std::cout << "Vertices: " << std::endl;
-
-        // If byte stride is specified - use it as increment.
-        auto increment = (verticesBufferView.byteStride == 0)
-            ? (3 * GetComponentSizeInBytes(TINYGLTF_COMPONENT_TYPE_FLOAT))
-            : verticesBufferView.byteStride;
-        for (int i = 0; i < verticesBufferView.byteLength; i += increment) {
-            auto x = *((float *) (verticesBuffer.data.data() + verticesBufferView.byteOffset + i));
-            auto y = *((float *) (verticesBuffer.data.data() + verticesBufferView.byteOffset + i + GetComponentSizeInBytes(TINYGLTF_COMPONENT_TYPE_FLOAT)));
-            auto z = *((float *) (verticesBuffer.data.data() + verticesBufferView.byteOffset + i + 2 * GetComponentSizeInBytes(TINYGLTF_COMPONENT_TYPE_FLOAT)));
-            
-            std::cout << " "
-            << (x)
-            << " "
-            << (y)
-            << " "
-            << (z)
-            << ";\n";
-
-            vertices.push_back(
-                {{x, y, z}, {1.0f, 0.0f, 0.0f}, {(x + 1)/2, (y + 1)/2}}
-            );
-        }        
-        
+        std::vector<Vertex> modelVertices = getVertices(model, verticesAccessor);
+        vertices.insert(vertices.end(), modelVertices.begin(), modelVertices.end());
     }
 
     void printMeshes(std::vector<Mesh> const& meshes) {
