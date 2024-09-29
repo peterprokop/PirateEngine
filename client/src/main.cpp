@@ -202,7 +202,7 @@ private:
         createTextureImage();
         createTextureImageView();
         createTextureSampler();
-        loadModel();
+        loadModels();
         createVertexBuffer();
         createIndexBuffer();
         createUniformBuffers();
@@ -1003,12 +1003,23 @@ private:
         vkBindBufferMemory(device, buffer, bufferMemory, 0);
     }
 
-    void loadModel() {
+    /// Should populate `vertices` and `indices` vectors
+    void loadModels() {
         GLTFLoader loader;
-        loader.loadModel((std::string(__PE_MODELS_DIR) + "/CesiumMan/CesiumMan.gltf").c_str());
-        exit(0);
-        loadObjModel();
+        loader.loadModel(            
+            (std::string(__PE_MODELS_DIR) + "/WaterBottle/WaterBottle.gltf").c_str(),
+            // (std::string(__PE_MODELS_DIR) + "/Triangle/Triangle.gltf").c_str(),
+            // (std::string(__PE_MODELS_DIR) + "/Duck/Duck.gltf").c_str(),
+            // (std::string(__PE_MODELS_DIR) + "/CesiumMan/CesiumMan.gltf").c_str(),
+            // (std::string(__PE_MODELS_DIR) + "/Cube/Cube.gltf").c_str(),
+            vertices,
+            indices
+        );
+               
+        // loadObjModel();
         std::cout << "Num vertices: " << vertices.size() << " Num idx: " << indices.size() << std::endl;
+
+        // exit(0);
     }
 
 
