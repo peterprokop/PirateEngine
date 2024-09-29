@@ -256,7 +256,7 @@ public:
         std::cout << "bits: " << image.bits  << std::endl;
         std::cout << "pixel_type: " << image.pixel_type  << std::endl;
         std::cout << "component: " << image.component  << std::endl;
-        std::cout << "image: " << image.image  << std::endl;
+        std::cout << "image: " << image.image.size()  << std::endl;
         std::cout << "bufferView: " << image.bufferView  << std::endl;
     }
 };

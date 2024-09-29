@@ -1012,12 +1012,16 @@ private:
         GLTFLoader loader;
         std::string textureFilePath = "";
         loader.loadModel(            
-            (std::string(__PE_MODELS_DIR) + "/WaterBottle/").c_str(),
-            "WaterBottle.gltf",
-            // (std::string(__PE_MODELS_DIR) + "/Triangle/Triangle.gltf").c_str(),
-            // (std::string(__PE_MODELS_DIR) + "/Duck/Duck.gltf").c_str(),
+            // (std::string(__PE_MODELS_DIR) + "/WaterBottle/").c_str(),
+            // "WaterBottle.gltf",
+            // (std::string(__PE_MODELS_DIR) + "/Triangle/").c_str(),
+            // "Triangle.gltf",
+            // (std::string(__PE_MODELS_DIR) + "/Duck/").c_str(),
+            // "Duck.gltf",
+
             // (std::string(__PE_MODELS_DIR) + "/CesiumMan/CesiumMan.gltf").c_str(),
-            // (std::string(__PE_MODELS_DIR) + "/Cube/Cube.gltf").c_str(),
+            (std::string(__PE_MODELS_DIR) + "/Cube/").c_str(),
+            "Cube.gltf",
             vertices,
             indices,
             textureFilePath
