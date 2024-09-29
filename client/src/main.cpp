@@ -155,6 +155,7 @@ private:
     std::vector<VkFence> inFlightFences;
     bool framebufferResized = false;
     uint32_t currentFrame = 0;
+    float currentFov = 45.0f;
 
     void initWindow() {
         glfwInit();
@@ -163,7 +164,7 @@ private:
         // Uncomment to disable resizing
         // glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
-        window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
+        window = glfwCreateWindow(WIDTH, HEIGHT, "Pirate Engine", nullptr, nullptr);
         glfwSetWindowUserPointer(window, this);
         glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
         glfwSetKeyCallback(window, keyCallback);
@@ -182,9 +183,9 @@ private:
             app->cleanup();
             exit(0);
         } else if (key == GLFW_KEY_MINUS && action == GLFW_PRESS) {
-            std::cout << "minus\n";
+            app->currentFov *= 1.1;
         } else if (key == GLFW_KEY_EQUAL && action == GLFW_PRESS) {
-            std::cout << "equal\n";            
+            app->currentFov *= 0.9;
         }
     }
 
@@ -1439,8 +1440,19 @@ private:
 
         UniformBufferObject ubo{};
         ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float) swapChainExtent.height, 0.1f, 10.0f);
+        ubo.view = glm::lookAt(
+            glm::vec3(2.0f, 2.0f, 2.0f), // eye
+            glm::vec3(0.0f, 0.0f, 0.0f), // center
+            glm::vec3(0.0f, 0.0f, 1.0f) // up
+        );
+        ubo.proj = glm::perspective(
+            glm::radians(currentFov), // fov
+            swapChainExtent.width / (float) swapChainExtent.height, // ascpet ratio
+            0.1f, // near
+            10.0f // far
+        );
+
+        // Because glm adapted to OpenGL
         ubo.proj[1][1] *= -1;
         memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
     }
