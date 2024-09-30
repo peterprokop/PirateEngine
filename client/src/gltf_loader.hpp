@@ -5,6 +5,8 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 // #define TINYGLTF_NOEXCEPTION // optional. disable exception handling.
 
+#import <filesystem>
+
 #import <tinygltf/tiny_gltf.h>
 
 using namespace tinygltf;
@@ -78,8 +80,7 @@ std::vector<Vertex> getVertices(
 class GLTFLoader {
 public:
     void loadModel(
-        std::string folderPath,
-        std::string filename,
+        std::string filePath,
         std::vector<Vertex> &vertices,
         std::vector<uint32_t> &indices,
         std::string &textureFilePath
@@ -89,7 +90,7 @@ public:
         std::string err;
         std::string warn;
 
-        bool ret = loader.LoadASCIIFromFile(&model, &err, &warn, folderPath + filename);
+        bool ret = loader.LoadASCIIFromFile(&model, &err, &warn, filePath);
         // for binary glTF(.glb)
         //bool ret = loader.LoadBinaryFromFile(&model, &err, &warn, argv[1]);
 
@@ -197,7 +198,8 @@ public:
 
         if (model.images.size() > 0) {
             // TODO: handle multiple images
-            textureFilePath = folderPath + model.images[0].uri;
+            std::filesystem::path path{filePath};
+            textureFilePath = path.parent_path() / model.images[0].uri;
             printImage(model.images[0]);
             std::cout << "textureFilePath: " << textureFilePath << std::endl;
         }        
