@@ -88,6 +88,11 @@ struct UniformBufferObject {
     alignas(16) glm::mat4 proj;
 };
 
+struct RenderableModel {
+    std::vector<Vertex> vertices;
+    std::vector<uint32_t> indices;
+};
+
 class PirateEngine {
 public:
     void run() {
@@ -126,8 +131,8 @@ private:
     VkPipelineLayout pipelineLayout;
     VkPipeline graphicsPipeline;
 
-    std::vector<Vertex> vertices;
-    std::vector<uint32_t> indices;
+    std::vector<RenderableModel> models;
+
     VkBuffer vertexBuffer;
     VkDeviceMemory vertexBufferMemory;
     VkBuffer indexBuffer;
@@ -1009,30 +1014,34 @@ private:
 
     /// Should populate `vertices` and `indices` vectors
     void loadModels() {
-        GLTFLoader loader;
-        std::string textureFilePath = "";
-        loader.loadModel(            
-            (std::string(__PE_MODELS_DIR) + "/WaterBottle/WaterBottle.gltf").c_str(),
-            // (std::string(__PE_MODELS_DIR) + "/Triangle/Triangle.gltf").c_str(),
-            // (std::string(__PE_MODELS_DIR) + "/Duck/Duck.gltf").c_str(),
-            // (std::string(__PE_MODELS_DIR) + "/CesiumMan/CesiumMan.gltf").c_str(),
-            // (std::string(__PE_MODELS_DIR) + "/Cube/Cube.gltf").c_str(),
-            vertices,
-            indices,
-            textureFilePath
-        );
-               
+        // GLTFLoader loader;
+        // std::string textureFilePath = "";
+        // loader.loadModel(            
+        //     (std::string(__PE_MODELS_DIR) + "/WaterBottle/WaterBottle.gltf").c_str(),
+        //     // (std::string(__PE_MODELS_DIR) + "/Triangle/Triangle.gltf").c_str(),
+        //     // (std::string(__PE_MODELS_DIR) + "/Duck/Duck.gltf").c_str(),
+        //     // (std::string(__PE_MODELS_DIR) + "/CesiumMan/CesiumMan.gltf").c_str(),
+        //     // (std::string(__PE_MODELS_DIR) + "/Cube/Cube.gltf").c_str(),
+        //     vertices,
+        //     indices,
+        //     textureFilePath
+        // );
+
+
+        loadSphereModels();       
         // loadObjModel();
-        std::cout << "Num vertices: " << vertices.size() << " Num idx: " << indices.size() << std::endl;
+        std::cout << "Num models: " << models.size() << std::endl;
 
         // exit(0);
-        createTextureImage(textureFilePath);
+        // createTextureImage(textureFilePath);
+        createTextureImage((std::string(__PE_TEXTURES_DIR) + "/texture.jpg").c_str());
         createTextureImageView();
     }
 
-
     /// Loads model from .obj file
     void loadObjModel() {
+        RenderableModel model;
+
         tinyobj::attrib_t attrib;
         std::vector<tinyobj::shape_t> shapes;
         std::vector<tinyobj::material_t> materials;
@@ -1071,24 +1080,40 @@ private:
                 vertex.color = {1.0f, 1.0f, 1.0f};
 
                 if (uniqueVertices.count(vertex) == 0) {
-                    uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
-                    vertices.push_back(vertex);
+                    uniqueVertices[vertex] = static_cast<uint32_t>(model.vertices.size());
+                    model.vertices.push_back(vertex);
                 }
 
-                indices.push_back(uniqueVertices[vertex]);
+                model.indices.push_back(uniqueVertices[vertex]);
             }
         }
+
+        models.push_back(model);
     }
 
     /// @brief Creates spheres with some offset between each other
     void loadSphereModels() {
-        createSphere(vertices, indices, {0, 0, 0});
-        createSphere(vertices, indices, {1, 1, 1});
-        createSphere(vertices, indices, {-1, -1, -1});
+        RenderableModel sphere1;
+        RenderableModel sphere2;
+        RenderableModel sphere3;
+        createSphere(sphere1.vertices, sphere1.indices, {0, 0, 0});
+        std::cout 
+            << "Num vertices: " << sphere1.vertices.size()
+            << " Num idx: " << sphere1.indices.size()
+            << std::endl; 
+        createSphere(sphere2.vertices, sphere2.indices, {1, 1, 1});
+        createSphere(sphere3.vertices, sphere3.indices, {-1, -1, -1});
+        models.push_back(sphere1);
+        models.push_back(sphere2);
+        models.push_back(sphere3);
     }
 
     void createVertexBuffer() {
-        VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+        VkDeviceSize bufferSize = 0;
+        
+        for (auto const& model : models) {
+            bufferSize += sizeof(model.vertices[0]) * model.vertices.size();
+        }
 
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
@@ -1102,7 +1127,11 @@ private:
 
         void* data;
         vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-            memcpy(data, vertices.data(), (size_t) bufferSize);
+            for (auto const& model : models) {
+                size_t size = sizeof(model.vertices[0]) * model.vertices.size();
+                memcpy(data, model.vertices.data(), size);
+                data = static_cast<void*>(static_cast<char*>(data) + size);
+            }
         vkUnmapMemory(device, stagingBufferMemory);
 
         createBuffer(
@@ -1120,15 +1149,25 @@ private:
     }
 
     void createIndexBuffer() {
-        VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+        VkDeviceSize bufferSize = 0;
+        
+        for (auto const& model : models) {
+            bufferSize += sizeof(model.indices[0]) * model.indices.size();
+        }
 
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
         createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
         void* data;
+        // size_t offset = 0;
         vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-        memcpy(data, indices.data(), (size_t) bufferSize);
+            // memcpy(data, indices.data(), (size_t) bufferSize);
+            for (auto const& model : models) {
+                size_t size = sizeof(model.indices[0]) * model.indices.size();
+                memcpy(data, model.indices.data(), size);
+                data = static_cast<void*>(static_cast<char*>(data) + size);
+            }
         vkUnmapMemory(device, stagingBufferMemory);
 
         createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer, indexBufferMemory);
@@ -1346,7 +1385,21 @@ private:
             );
             // For non-indexed draw:
             // vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
-            vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+            uint32_t firstIndex = 0;
+            uint32_t vertexOffset = 0;
+            for (auto const& model : models) {
+                vkCmdDrawIndexed(
+                    commandBuffer, // commandBuffer
+                    static_cast<uint32_t>(model.indices.size()), // indexCount
+                    1, // instanceCount
+                    firstIndex, // firstIndex
+                    vertexOffset, // vertexOffset
+                    0 // firstInstance
+                );
+
+                firstIndex += model.indices.size();
+                vertexOffset += model.vertices.size();
+            }
 
         vkCmdEndRenderPass(commandBuffer);
 
