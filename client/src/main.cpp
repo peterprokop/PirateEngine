@@ -148,10 +148,10 @@ private:
     VkDeviceMemory depthImageMemory;
     VkImageView depthImageView;
 
-    VkImage textureImage;
-    VkImageView textureImageView;
-    VkSampler textureSampler;
-    VkDeviceMemory textureImageMemory;
+    std::vector<VkImage> textureImages;
+    std::vector<VkImageView> textureImageViews;
+    std::vector<VkDeviceMemory> textureImageMemories;
+    VkSampler textureSampler;     
 
     std::vector<VkCommandBuffer> commandBuffers;
 
@@ -203,13 +203,13 @@ private:
         createLogicalDevice();
         createSwapChain();
         createImageViews();
-        createRenderPass();
+        createRenderPass();        
         createDescriptorSetLayout();
-        createGraphicsPipeline();        
+        createGraphicsPipeline();
         createCommandPool();
         createDepthResources();
         createFramebuffers();
-        loadModels();                
+        loadModels();
         createTextureSampler();
         createVertexBuffer();
         createIndexBuffer();
@@ -233,9 +233,17 @@ private:
         cleanupSwapChain();
 
         vkDestroySampler(device, textureSampler, nullptr);
-        vkDestroyImageView(device, textureImageView, nullptr);
-        vkDestroyImage(device, textureImage, nullptr);
-        vkFreeMemory(device, textureImageMemory, nullptr);
+        for (auto const& tiv: textureImageViews) {
+            vkDestroyImageView(device, tiv, nullptr);
+        }
+
+        for (auto const& ti: textureImages) {
+            vkDestroyImage(device, ti, nullptr);
+        }        
+        
+        for (auto const& m: textureImageMemories) {
+            vkFreeMemory(device, m, nullptr);
+        }
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
             vkDestroyBuffer(device, uniformBuffers[i], nullptr);
@@ -800,18 +808,32 @@ private:
 
         stbi_image_free(pixels);
 
-        createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
+        VkDeviceMemory textureImageMemory;
+        VkImage textureImage;
+        createImage(
+            texWidth,
+            texHeight,
+            VK_FORMAT_R8G8B8A8_SRGB,
+            VK_IMAGE_TILING_OPTIMAL,
+            VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+            textureImage,
+            textureImageMemory
+        );        
 
         transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
             copyBufferToImage(stagingBuffer, textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
         transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        
+        textureImageMemories.push_back(textureImageMemory);
+        textureImages.push_back(textureImage);
 
         vkDestroyBuffer(device, stagingBuffer, nullptr);
         vkFreeMemory(device, stagingBufferMemory, nullptr);
-    }
 
-    void createTextureImageView() {
-        textureImageView = createImageView(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+        textureImageViews.push_back(
+            createImageView(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT)
+        );
     }
 
     VkImageView createImageView(
@@ -871,7 +893,16 @@ private:
         }
     }
 
-    void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) {
+    void createImage(
+        uint32_t width,
+        uint32_t height,
+        VkFormat format,
+        VkImageTiling tiling,
+        VkImageUsageFlags usage,
+        VkMemoryPropertyFlags properties,
+        VkImage& image,
+        VkDeviceMemory& imageMemory
+    ) {
         VkImageCreateInfo imageInfo{};
         imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -1033,9 +1064,8 @@ private:
         std::cout << "Num models: " << models.size() << std::endl;
 
         // exit(0);
-        // createTextureImage(textureFilePath);
         createTextureImage((std::string(__PE_TEXTURES_DIR) + "/texture.jpg").c_str());
-        createTextureImageView();
+        createTextureImage((std::string(__PE_TEXTURES_DIR) + "/viking_room.png").c_str());
     }
 
     /// Loads model from .obj file
@@ -1160,9 +1190,7 @@ private:
         createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
         void* data;
-        // size_t offset = 0;
         vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-            // memcpy(data, indices.data(), (size_t) bufferSize);
             for (auto const& model : models) {
                 size_t size = sizeof(model.indices[0]) * model.indices.size();
                 memcpy(data, model.indices.data(), size);
@@ -1229,28 +1257,41 @@ private:
             bufferInfo.offset = 0;
             bufferInfo.range = sizeof(UniformBufferObject);
 
-            VkDescriptorImageInfo imageInfo{};
-            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            imageInfo.imageView = textureImageView;
-            imageInfo.sampler = textureSampler;
+            std::vector<VkWriteDescriptorSet> descriptorWrites{};
 
-            std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
+            VkWriteDescriptorSet descriptorWriteUBO;
+            descriptorWriteUBO.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWriteUBO.dstSet = descriptorSets[i];
+            descriptorWriteUBO.dstBinding = 0;
+            descriptorWriteUBO.dstArrayElement = 0;
+            descriptorWriteUBO.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            descriptorWriteUBO.descriptorCount = 1;
+            descriptorWriteUBO.pBufferInfo = &bufferInfo;
 
-            descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[0].dstSet = descriptorSets[i];
-            descriptorWrites[0].dstBinding = 0;
-            descriptorWrites[0].dstArrayElement = 0;
-            descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            descriptorWrites[0].descriptorCount = 1;
-            descriptorWrites[0].pBufferInfo = &bufferInfo;
+            descriptorWrites.push_back(descriptorWriteUBO);
 
-            descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[1].dstSet = descriptorSets[i];
-            descriptorWrites[1].dstBinding = 1;
-            descriptorWrites[1].dstArrayElement = 0;
-            descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites[1].descriptorCount = 1;
-            descriptorWrites[1].pImageInfo = &imageInfo;
+            size_t index = 0;
+            // TODO:
+            auto const& tiv = textureImageViews[0];
+            // for (auto const& tiv : textureImageViews) {
+                VkDescriptorImageInfo imageInfo{};
+                imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                imageInfo.imageView = tiv;
+                imageInfo.sampler = textureSampler;
+
+                VkWriteDescriptorSet descriptorWriteTextureImageView;
+                descriptorWriteTextureImageView.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                descriptorWriteTextureImageView.dstSet = descriptorSets[i];
+                descriptorWriteTextureImageView.dstBinding = 1;
+                descriptorWriteTextureImageView.dstArrayElement = index;
+                descriptorWriteTextureImageView.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                descriptorWriteTextureImageView.descriptorCount = textureImageViews.size();
+                descriptorWriteTextureImageView.pImageInfo = &imageInfo;
+
+                descriptorWrites.push_back(descriptorWriteTextureImageView);
+
+                index++;
+            // }
 
             vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
         }
